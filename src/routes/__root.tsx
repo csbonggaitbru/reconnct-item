@@ -77,21 +77,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Reunite — แพลตฟอร์มแจ้งของหายและพบของ" },
+      {
+        name: "description",
+        content:
+          "Reunite ช่วยเชื่อมเจ้าของของหายกับผู้พบของอย่างปลอดภัย ตรวจสอบได้ และนัดรับคืนได้สะดวก",
+      },
+      { name: "author", content: "Reunite" },
+      { property: "og:title", content: "Reunite — แพลตฟอร์มแจ้งของหายและพบของ" },
+      {
+        property: "og:description",
+        content: "ตามหา แจ้งพบ และนัดรับของคืนได้อย่างปลอดภัยในชุมชนที่ไว้ใจได้",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -101,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="th">
       <head>
         <HeadContent />
       </head>
