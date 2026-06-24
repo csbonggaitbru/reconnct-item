@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NewRouteImport } from './routes/new'
@@ -16,6 +17,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/new': typeof NewRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/post/$id': typeof PostIdRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/new': typeof NewRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/post/$id': typeof PostIdRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,37 @@ export interface FileRoutesById {
   '/new': typeof NewRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/post/$id': typeof PostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/new' | '/profile' | '/search' | '/post/$id'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/new'
+    | '/profile'
+    | '/search'
+    | '/sitemap.xml'
+    | '/post/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/new' | '/profile' | '/search' | '/post/$id'
-  id: '__root__' | '/' | '/auth' | '/new' | '/profile' | '/search' | '/post/$id'
+  to:
+    | '/'
+    | '/auth'
+    | '/new'
+    | '/profile'
+    | '/search'
+    | '/sitemap.xml'
+    | '/post/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/new'
+    | '/profile'
+    | '/search'
+    | '/sitemap.xml'
+    | '/post/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -86,11 +117,19 @@ export interface RootRouteChildren {
   NewRoute: typeof NewRoute
   ProfileRoute: typeof ProfileRoute
   SearchRoute: typeof SearchRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PostIdRoute: typeof PostIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
@@ -142,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewRoute: NewRoute,
   ProfileRoute: ProfileRoute,
   SearchRoute: SearchRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   PostIdRoute: PostIdRoute,
 }
 export const routeTree = rootRouteImport
