@@ -14,16 +14,268 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      comments: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["post_status"] | null
+          id: string
+          post_id: string
+          to_status: Database["public"]["Enums"]["post_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["post_status"] | null
+          id?: string
+          post_id: string
+          to_status: Database["public"]["Enums"]["post_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["post_status"] | null
+          id?: string
+          post_id?: string
+          to_status?: Database["public"]["Enums"]["post_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_status_history_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          category: Database["public"]["Enums"]["item_category"]
+          created_at: string
+          description: string
+          happened_at: string
+          id: string
+          image_emoji: string
+          image_hue: number
+          image_url: string | null
+          is_hidden: boolean
+          latitude: number | null
+          location_text: string
+          longitude: number | null
+          marks: string
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["item_category"]
+          created_at?: string
+          description?: string
+          happened_at?: string
+          id?: string
+          image_emoji?: string
+          image_hue?: number
+          image_url?: string | null
+          is_hidden?: boolean
+          latitude?: number | null
+          location_text?: string
+          longitude?: number | null
+          marks?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["item_category"]
+          created_at?: string
+          description?: string
+          happened_at?: string
+          id?: string
+          image_emoji?: string
+          image_hue?: number
+          image_url?: string | null
+          is_hidden?: boolean
+          latitude?: number | null
+          location_text?: string
+          longitude?: number | null
+          marks?: string
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_contacts: {
+        Row: {
+          line_id: string | null
+          note: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          line_id?: string | null
+          note?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          line_id?: string | null
+          note?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_emoji: string
+          created_at: string
+          display_name: string
+          id: string
+          reputation: number
+          verified: boolean
+        }
+        Insert: {
+          avatar_emoji?: string
+          created_at?: string
+          display_name?: string
+          id: string
+          reputation?: number
+          verified?: boolean
+        }
+        Update: {
+          avatar_emoji?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          reputation?: number
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reason: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reason: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reason?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      item_category:
+        | "electronics"
+        | "wallet"
+        | "keys"
+        | "documents"
+        | "bag"
+        | "jewelry"
+        | "pet"
+        | "clothing"
+        | "other"
+      post_status: "searching" | "arranging" | "closed"
+      post_type: "lost" | "found"
+      report_status: "open" | "reviewing" | "resolved" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +402,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      item_category: [
+        "electronics",
+        "wallet",
+        "keys",
+        "documents",
+        "bag",
+        "jewelry",
+        "pet",
+        "clothing",
+        "other",
+      ],
+      post_status: ["searching", "arranging", "closed"],
+      post_type: ["lost", "found"],
+      report_status: ["open", "reviewing", "resolved", "dismissed"],
+    },
   },
 } as const
