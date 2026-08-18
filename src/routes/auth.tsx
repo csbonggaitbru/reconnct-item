@@ -1,5 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Search, Handshake } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ShieldCheck, Search, Handshake, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -7,63 +12,204 @@ export const Route = createFileRoute("/auth")({
       { title: "เข้าสู่ระบบ — Reunite" },
       {
         name: "description",
-        content: "เข้าสู่ระบบ Reunite ด้วยบัญชี Google เพื่อเริ่มประกาศแจ้งของหายและพบของ",
+        content: "เข้าสู่ระบบหรือสมัครสมาชิก Reunite เพื่อเริ่มประกาศแจ้งของหายและพบของ",
       },
+      { property: "og:title", content: "เข้าสู่ระบบ — Reunite" },
+      { property: "og:description", content: "สมัครสมาชิกเพื่อประกาศของหายและพบของ" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
 });
 
 function AuthPage() {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (session) void navigate({ to: "/", replace: true });
+  }, [session, navigate]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: displayName || email.split("@")[0] },
+          },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          toast.success("สมัครสำเร็จ! กรุณายืนยันอีเมลก่อนเข้าใช้งาน");
+          return;
+        }
+        toast.success("ยินดีต้อนรับสู่ Reunite 🤝");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("เข้าสู่ระบบสำเร็จ");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onGoogle() {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      toast.error("เข้าสู่ระบบด้วย Google ไม่สำเร็จ");
+      return;
+    }
+    if (result.redirected) return;
+    void navigate({ to: "/", replace: true });
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-soft via-background to-background flex flex-col items-center justify-between px-6 py-10">
-      <div className="w-full max-w-[420px] flex-1 flex flex-col justify-center">
+    <div className="min-h-screen bg-gradient-to-b from-primary-soft via-background to-background flex flex-col items-center px-6 py-10">
+      <div className="w-full max-w-[420px] flex-1">
         <div className="text-center">
           <div className="inline-flex size-16 rounded-3xl bg-primary text-primary-foreground items-center justify-center shadow-[var(--shadow-pop)] mb-5 text-3xl">
             🤝
           </div>
-          <h1 className="text-[28px] font-bold leading-tight">
+          <h1 className="text-[26px] font-bold leading-tight">
             ตามหาของที่หาย<br />
             <span className="text-primary">ส่งคืนของที่พบ</span>
           </h1>
-          <p className="mt-3 text-[14px] text-muted-foreground leading-relaxed">
-            Reunite เป็นพื้นที่ปลอดภัยที่ให้คุณประสานงานกับเจ้าของและผู้พบของ
-            พร้อมการยืนยันตัวตนและสถานะเคสที่โปร่งใส
+          <p className="mt-3 text-[13.5px] text-muted-foreground leading-relaxed">
+            พื้นที่ปลอดภัยสำหรับประสานงานระหว่างเจ้าของและผู้พบของ
           </p>
         </div>
+
+        <div className="mt-6 flex gap-2 p-1 bg-muted rounded-xl">
+          {(["signin", "signup"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition ${
+                mode === m
+                  ? "bg-surface text-foreground shadow-[var(--shadow-card)]"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {m === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={onSubmit} className="mt-4 space-y-3">
+          {mode === "signup" && (
+            <Field
+              label="ชื่อที่แสดง"
+              value={displayName}
+              onChange={setDisplayName}
+              placeholder="เช่น ภูริช ใจดี"
+            />
+          )}
+          <Field
+            label="อีเมล"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="you@example.com"
+            required
+          />
+          <Field
+            label="รหัสผ่าน"
+            type="password"
+            value={password}
+            onChange={setPassword}
+            placeholder="อย่างน้อย 6 ตัวอักษร"
+            required
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold shadow-[var(--shadow-pop)] disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {busy && <Loader2 className="size-4 animate-spin" />}
+            {mode === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+          </button>
+        </form>
+
+        <div className="my-4 flex items-center gap-3 text-[12px] text-muted-foreground">
+          <span className="h-px flex-1 bg-border" /> หรือ <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <button
+          onClick={onGoogle}
+          disabled={busy}
+          className="w-full h-12 rounded-xl bg-surface border border-border flex items-center justify-center gap-3 font-medium disabled:opacity-60"
+        >
+          <GoogleMark />
+          ดำเนินการต่อด้วย Google
+        </button>
 
         <ul className="mt-8 space-y-3">
           <Feature
             icon={<Search className="size-5" />}
             title="ค้นหารอบตัวคุณ"
-            desc="ดูประกาศใกล้คุณ ใช้ตัวกรองหมวดหมู่และระยะทาง"
+            desc="ดูประกาศใกล้คุณ ใช้ตัวกรองหมวดหมู่และคำค้น"
           />
           <Feature
             icon={<ShieldCheck className="size-5" />}
             title="ยืนยันก่อนติดต่อ"
-            desc="ระบบปกปิดข้อมูลส่วนตัวจนกว่าจะตกลงนัดรับ"
+            desc="ข้อมูลติดต่อส่วนตัวถูกปกปิดจนกว่าจะตกลงนัดรับ"
           />
           <Feature
             icon={<Handshake className="size-5" />}
             title="ปิดเคสร่วมกัน"
-            desc="ทั้งสองฝ่ายและแอดมินยืนยันการรับของคืน"
+            desc="ทุกการเปลี่ยนสถานะถูกบันทึกไว้ตรวจสอบได้"
           />
         </ul>
       </div>
-
-      <div className="w-full max-w-[420px] space-y-3">
-        <Link
-          to="/"
-          className="w-full h-12 rounded-xl bg-foreground text-background flex items-center justify-center gap-3 font-medium shadow-[var(--shadow-card)]"
-        >
-          <GoogleMark />
-          เข้าสู่ระบบด้วย Google
-        </Link>
-        <p className="text-[11.5px] text-center text-muted-foreground px-4">
-          เมื่อดำเนินการต่อ คุณยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัวของ Reunite
-        </p>
-      </div>
     </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[13px] font-semibold">{label}</span>
+      <input
+        type={type}
+        value={value}
+        required={required}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1.5 w-full px-4 py-3 rounded-xl bg-surface border border-border text-[14px] focus:outline-none focus:border-primary"
+      />
+    </label>
   );
 }
 

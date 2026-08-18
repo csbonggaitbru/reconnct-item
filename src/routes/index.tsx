@@ -1,15 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, MapPin, Sparkles, Filter } from "lucide-react";
+import { MapPin, Sparkles, Filter, LogIn } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { PostCard } from "@/components/post-card";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import {
+  CATEGORIES,
   CATEGORY_EMOJI,
   CATEGORY_LABEL,
-  CURRENT_USER,
-  POSTS,
   type Category,
-} from "@/lib/mock-data";
-import { useMemo, useState } from "react";
+} from "@/lib/domain";
+import { useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,6 +22,13 @@ export const Route = createFileRoute("/")({
         content:
           "เรียกดูประกาศของหายและของที่พบใกล้คุณ พร้อมระบบยืนยันตัวตนและสถานะเคสที่โปร่งใส",
       },
+      { property: "og:title", content: "Reunite — ฟีดของหาย / พบของรอบตัวคุณ" },
+      {
+        property: "og:description",
+        content: "ประกาศของหายและพบของในชุมชนที่ตรวจสอบได้",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: FeedPage,
@@ -31,26 +40,27 @@ const FILTERS = [
   { id: "found", label: "พบของ" },
 ] as const;
 
-const CATEGORIES: Category[] = [
-  "electronics",
-  "wallet",
-  "keys",
-  "documents",
-  "bag",
-  "jewelry",
-  "pet",
-  "clothing",
-];
-
 function FeedPage() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [category, setCategory] = useState<Category | "all">("all");
+  const { profile, session } = useAuth();
 
-  const posts = useMemo(() => {
-    return POSTS.filter((p) => (filter === "all" ? true : p.type === filter)).filter(
-      (p) => (category === "all" ? true : p.category === category),
-    );
-  }, [filter, category]);
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ["posts", filter, category],
+    queryFn: async () => {
+      let q = supabase
+        .from("posts")
+        .select("*")
+        .eq("is_hidden", false)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (filter !== "all") q = q.eq("type", filter);
+      if (category !== "all") q = q.eq("category", category);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+  });
 
   return (
     <AppShell
@@ -59,19 +69,20 @@ function FeedPage() {
           <div className="px-4 pt-4 pb-3 flex items-center justify-between">
             <div>
               <p className="text-[12px] text-muted-foreground flex items-center gap-1">
-                <MapPin className="size-3" /> กรุงเทพ · 5 กม.
+                <MapPin className="size-3" /> ประกาศล่าสุดในชุมชน
               </p>
               <h1 className="text-[22px] font-bold leading-tight">
-                สวัสดี, {CURRENT_USER.name.split(" ")[0]} 👋
+                {profile ? `สวัสดี, ${profile.display_name} 👋` : "Reunite 🤝"}
               </h1>
             </div>
-            <button
-              className="size-10 rounded-full bg-surface border border-border flex items-center justify-center text-foreground relative"
-              aria-label="การแจ้งเตือน"
-            >
-              <Bell className="size-5" />
-              <span className="absolute top-2 right-2 size-2 bg-destructive rounded-full" />
-            </button>
+            {!session && (
+              <Link
+                to="/auth"
+                className="h-10 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-medium flex items-center gap-1.5"
+              >
+                <LogIn className="size-4" /> เข้าสู่ระบบ
+              </Link>
+            )}
           </div>
 
           <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none">
@@ -112,10 +123,7 @@ function FeedPage() {
       </section>
 
       <section className="px-4 pt-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-foreground">หมวดหมู่ยอดนิยม</h2>
-          <button className="text-[12.5px] text-primary font-medium">ดูทั้งหมด</button>
-        </div>
+        <h2 className="font-semibold text-foreground mb-2">หมวดหมู่</h2>
         <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4">
           <CategoryPill
             label="ทั้งหมด"
@@ -137,12 +145,18 @@ function FeedPage() {
 
       <section className="px-4 pt-6 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-foreground">รอบ ๆ คุณ ({posts.length})</h2>
+          <h2 className="font-semibold text-foreground">ประกาศ ({posts.length})</h2>
           <span className="text-[12px] text-muted-foreground">ใหม่ล่าสุด</span>
         </div>
-        {posts.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-28 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
-            ยังไม่มีโพสต์ในหมวดที่เลือก ลองเปลี่ยนตัวกรองดูนะ
+            ยังไม่มีประกาศในหมวดที่เลือก — ลองเป็นคนแรกที่ประกาศดูสิ
           </div>
         ) : (
           posts.map((p) => <PostCard key={p.id} post={p} />)

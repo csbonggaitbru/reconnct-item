@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { POSTS } from "@/lib/mock-data";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const BASE_URL = "";
 
@@ -15,13 +16,34 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+        const client = createClient<Database>(process.env["SUPABASE_URL"]!, key, {
+          auth: { persistSession: false, autoRefreshToken: false },
+          global: {
+            fetch: (input, init) => {
+              const h = new Headers(init?.headers);
+              if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
+                h.delete("Authorization");
+              }
+              h.set("apikey", key);
+              return fetch(input, { ...init, headers: h });
+            },
+          },
+        });
+        const { data: posts } = await client
+          .from("posts")
+          .select("id, updated_at")
+          .eq("is_hidden", false)
+          .order("created_at", { ascending: false })
+          .limit(500);
+
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "hourly", priority: "1.0" },
           { path: "/search", changefreq: "daily", priority: "0.8" },
           { path: "/new", changefreq: "monthly", priority: "0.5" },
-          ...POSTS.map((p) => ({
+          ...(posts ?? []).map((p) => ({
             path: `/post/${p.id}`,
-            lastmod: p.postedAt,
+            lastmod: p.updated_at,
             changefreq: "daily" as const,
             priority: "0.7",
           })),
