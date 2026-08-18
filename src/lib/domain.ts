@@ -10,7 +10,7 @@ export type PostType = Database["public"]["Enums"]["post_type"];
 export type PostStatus = Database["public"]["Enums"]["post_status"];
 export type Category = Database["public"]["Enums"]["item_category"];
 
-export type PostWithProfile = PostRow & { profiles: ProfileRow | null };
+export type PostWithProfile = PostRow & { profiles?: ProfileRow | null };
 
 export const CATEGORY_LABEL: Record<Category, string> = {
   electronics: "อุปกรณ์อิเล็กทรอนิกส์",

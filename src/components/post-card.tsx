@@ -4,11 +4,11 @@ import {
   CATEGORY_EMOJI,
   CATEGORY_LABEL,
   relativeTime,
-  type PostWithProfile,
+  type PostRow,
 } from "@/lib/domain";
 import { StatusBadge, TypeBadge } from "./badges";
 
-export function PostCard({ post }: { post: PostWithProfile }) {
+export function PostCard({ post }: { post: PostRow }) {
   return (
     <Link
       to="/post/$id"
